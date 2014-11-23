@@ -47,7 +47,8 @@ double rmse(const double a[], const double b[], const int size)
 
 int main (int argc, char * argv [])
 {
-	std::cout << "Go!" << std::endl;
+	const bool verbose = false;
+	if (verbose) std::cout << "Go!" << std::endl;
 
 	//const int M = 3;	// assume symmetric matrices
 	//const double A[M][M] = {{4, -1, -1}, {-2, 6, 1}, {-1, 1, 7}};
@@ -78,18 +79,21 @@ int main (int argc, char * argv [])
 	const double end_time = omp_get_wtime();
 	const double seconds_spent = end_time - start_time;
 
-
-	std::cout << "diff: " << array_diff(x, last_x, M) << std::endl;
-	std::cout << "x: ";
-	print_array(x, M);
+	if (verbose) {
+		std::cout << "diff: " << array_diff(x, last_x, M) << std::endl;
+		std::cout << "x: ";
+		print_array(x, M);
+	}
 	double bx[M] = {0};
 	for (int i = 0; i < M; i++) {
 		for (int j = 0; j < M; j++) {
 			bx[i] += A[i][j] * x[j];
 		}
 	}
-	std::cout << "resulting b: ";
-	print_array(bx, M);
+	if (verbose) {
+		std::cout << "resulting b: ";
+		print_array(bx, M);
+	}
 	std::cout << "RMSE: " << rmse(bx, b, M) << std::endl;
 	std::cout << "result obtained after " << iterations << " iterations, " << seconds_spent << "s" << std::endl;
 
