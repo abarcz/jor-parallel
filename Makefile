@@ -1,6 +1,6 @@
 
 CC=gcc
-CCFLAGS=-Wall -std=c99 -fopenmp -O3
+CCFLAGS=-Wall -std=c99 -fopenmp -O2
 OBJECTS=main.o
 
 main: $(OBJECTS)
