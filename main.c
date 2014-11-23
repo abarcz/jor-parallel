@@ -79,6 +79,7 @@ int main (int argc, char * argv [])
 
 			//#pragma omp parallel for shared(last_x) private(j) reduction(+: sum) schedule(dynamic)
 			#pragma omp simd reduction(+: sum) aligned(A, last_x: 16) linear(j)
+			//#pragma omp target map(to: A, last_x) map(from: sum)
 			for (j = 0; j < M; j++) {
 				sum += A[i][j] * last_x[j];
 			}
