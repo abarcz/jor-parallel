@@ -49,6 +49,9 @@ double rmse(const double a[], const double b[], const int size)
 int main (int argc, char * argv [])
 {
 	const bool verbose = false;
+	//omp_set_dynamic(true);
+	//omp_set_nested(true);
+	//omp_set_num_threads(6);
 
 	//const int M = 3;	// assume symmetric matrices
 	//const double A[M][M] = {{4, -1, -1}, {-2, 6, 1}, {-1, 1, 7}};
@@ -56,22 +59,28 @@ int main (int argc, char * argv [])
 	double last_x[M] __attribute__((aligned(16))) = {0};
 	double x[M] __attribute__((aligned(16))) = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 
-
 	const double min_diff = 0.0001;
-	const double alpha = 1;
+	const double alpha = 1.01;
 	int iterations = 0;
 
 	// solve Ax = b
 	const double start_time = omp_get_wtime();
 	while (array_diff(x, last_x, M) > min_diff) {
 		memcpy(last_x, x, sizeof(x));
+
+		// A, M, alpha and b are constant, so they cannot be declared as shared
+		//#pragma omp parallel for shared(last_x, x) schedule(dynamic)
 		for (int i = 0; i < M; i++) {
 			double sum = 0;
 			int j = 0;
+
+			// omp simd doesn't generate any addpd or mulpd instructions, it tampers the -O2 auto-vectorisation
 			//#pragma omp simd reduction(+: sum) aligned(A, last_x: 16) linear(j)
+			//#pragma omp parallel for shared(last_x) private(j) reduction(+: sum) schedule(dynamic)
 			for (j = 0; j < M; j++) {
 				sum += A[i][j] * last_x[j];
 			}
+
 			sum -= A[i][i] * last_x[i];	// opt: outside the loop for gcc sse optimizer
 			x[i] = (1 - alpha) * last_x[i] + alpha * (b[i] - sum) / A[i][i];
 		}
@@ -95,8 +104,8 @@ int main (int argc, char * argv [])
 		printf("resulting b: ");
 		print_array(bx, M);
 	}
-	printf("RMSE: %f\n", rmse(bx, b, M));
-	printf("iterations: %d, seconds: %f\n", iterations, seconds_spent);
+	printf("RMSE: %0.10f\n", rmse(bx, b, M));
+	printf("iterations: %d, seconds: %0.10f\n", iterations, seconds_spent);
 
 	return 0;
 }
