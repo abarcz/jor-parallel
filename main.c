@@ -74,9 +74,8 @@ int main (int argc, char * argv [])
 			double sum = 0;
 			int j = 0;
 
-			// omp simd doesn't generate any addpd or mulpd instructions, it tampers the -O2 auto-vectorisation
-			//#pragma omp simd reduction(+: sum) aligned(A, last_x: 16) linear(j)
 			//#pragma omp parallel for shared(last_x) private(j) reduction(+: sum) schedule(dynamic)
+			//#pragma omp simd reduction(+: sum) aligned(A, last_x: 16) linear(j)
 			for (j = 0; j < M; j++) {
 				sum += A[i][j] * last_x[j];
 			}
