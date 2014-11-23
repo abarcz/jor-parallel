@@ -1,13 +1,16 @@
 
-CXX=g++
-CXXFLAGS=-Wall -fopenmp
+CC=gcc
+CCFLAGS=-Wall -std=c99 -fopenmp -O2
 OBJECTS=main.o
 
 main: $(OBJECTS)
-	$(CXX) $(OBJECTS) -fopenmp -o main
+	$(CC) $(OBJECTS) -fopenmp -lm -o main
 
-main.o: main.cc
-	$(CXX) $(CXXFLAGS) -c -o main.o main.cc
+main.o: main.c
+	$(CC) $(CCFLAGS) -c -o main.o main.c
+
+main.s: main.c
+	$(CC) $(CCFLAGS) -lm -g -Wa,-aslh main.c > main.s
 
 clean:
-	rm -f main *.o
+	rm -f main *.o main.s

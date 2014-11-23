@@ -1,7 +1,8 @@
 #include <omp.h>
-#include <cstring>
-#include <cmath>
-#include <iostream>
+#include <string.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 #include "data32.h"
 
@@ -19,7 +20,7 @@ double array_diff(const double a[], const double b[], const int size)
 {
 	double diff = 0;
 	for (int i = 0; i < size; i++){
-		diff += std::abs(a[i] - b[i]);
+		diff += fabs(a[i] - b[i]);
 	}
 	return diff;
 }
@@ -28,9 +29,9 @@ double array_diff(const double a[], const double b[], const int size)
 void print_array(const double a[], const int size)
 {
 	for (int i = 0; i < size; i++) {
-		std::cout << a[i] << ", ";
+		printf("%f, ", a[i]);
 	}
-	std::cout << std::endl;
+	printf("\n");
 }
 
 /** calculate RMSE between two arrays */
@@ -48,13 +49,12 @@ double rmse(const double a[], const double b[], const int size)
 int main (int argc, char * argv [])
 {
 	const bool verbose = false;
-	if (verbose) std::cout << "Go!" << std::endl;
 
 	//const int M = 3;	// assume symmetric matrices
 	//const double A[M][M] = {{4, -1, -1}, {-2, 6, 1}, {-1, 1, 7}};
 	//const double b[M] = {3, 9, -6};
-	double last_x[M] = {0};
-	double x[M] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+	double last_x[M] __attribute__((aligned(16))) = {0};
+	double x[M] __attribute__((aligned(16))) = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 
 
 	const double min_diff = 0.0001;
@@ -67,11 +67,12 @@ int main (int argc, char * argv [])
 		memcpy(last_x, x, sizeof(x));
 		for (int i = 0; i < M; i++) {
 			double sum = 0;
-			for (int j = 0; j < M; j++) {
-				if (j != i) {
-					sum += A[i][j] * last_x[j];
-				}
+			int j = 0;
+			//#pragma omp simd reduction(+: sum) aligned(A, last_x: 16) linear(j)
+			for (j = 0; j < M; j++) {
+				sum += A[i][j] * last_x[j];
 			}
+			sum -= A[i][i] * last_x[i];	// opt: outside the loop for gcc sse optimizer
 			x[i] = (1 - alpha) * last_x[i] + alpha * (b[i] - sum) / A[i][i];
 		}
 		iterations++;
@@ -80,8 +81,8 @@ int main (int argc, char * argv [])
 	const double seconds_spent = end_time - start_time;
 
 	if (verbose) {
-		std::cout << "diff: " << array_diff(x, last_x, M) << std::endl;
-		std::cout << "x: ";
+		printf("diff: %f\n", array_diff(x, last_x, M));
+		printf("x: ");
 		print_array(x, M);
 	}
 	double bx[M] = {0};
@@ -91,11 +92,11 @@ int main (int argc, char * argv [])
 		}
 	}
 	if (verbose) {
-		std::cout << "resulting b: ";
+		printf("resulting b: ");
 		print_array(bx, M);
 	}
-	std::cout << "RMSE: " << rmse(bx, b, M) << std::endl;
-	std::cout << "result obtained after " << iterations << " iterations, " << seconds_spent << "s" << std::endl;
+	printf("RMSE: %f\n", rmse(bx, b, M));
+	printf("iterations: %d, seconds: %f\n", iterations, seconds_spent);
 
 	return 0;
 }
