@@ -54,13 +54,18 @@ void swap(double** a, double** b)
 
 int main(int argc, char* argv[])
 {
+	if (argc != 2) {
+		printf("program must be called with matrix dimension as the only argument\n");
+		exit(1);
+	}
+	const int M = atoi(argv[1]);
+	printf("Using matrix dimension: %d\n", M);
+
 	// always use the same seed to get the same matrices during tests
 	srand(0);
 
 	const bool verbose = false;
-	omp_set_dynamic(true);
 
-	const int M = 1024;
 	const DataSet dataset = generate_dataset(M);
 
 	double* last_x = aligned_vector(M, false);
@@ -76,7 +81,6 @@ int main(int argc, char* argv[])
 	// solve Ax = b
 	const double start_time = omp_get_wtime();
 
-
 	double sum = 0;
 	int j = 0;
 	int i = 0;
@@ -91,8 +95,8 @@ int main(int argc, char* argv[])
 		for (i = 0; i < M; i++) {
 			sum = 0;
 
-			//#pragma omp target map(to: A, last_x) map(from: sum)
-			//#pragma omp simd reduction(+: sum) aligned(A, last_x: 16) linear(j)
+			//#pragma omp target map(to: A, last_x) map(from: sum)a
+			#pragma omp simd reduction(+: sum) aligned(A, last_x: 16) linear(j)
 			for (j = 0; j < M; j++) {
 				sum += A[i * M + j] * last_x[j];
 			}
