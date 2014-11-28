@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <assert.h>
 
 /**
  *
@@ -59,12 +60,16 @@ int main(int argc, char* argv[])
 		int i = 0;
 		const double* A = dataset.A;
 		const double* b = dataset.b;
-		//#pragma omp parallel shared(last_x, x) private(i, j, sum)
+		assert(x != last_x);
+		#pragma omp parallel shared(last_x, x, iterations) private(i, j, sum)
 		while (array_diff(x, last_x, M) > min_diff) {
-			swap(&last_x, &x);
+			#pragma omp single
+			{
+				swap(&last_x, &x);
+			}
 
 			// A, M, alpha and b are constant, so they cannot be declared as shared
-			//#pragma omp for schedule(dynamic)
+			#pragma omp for schedule(dynamic)
 			for (i = 0; i < M; i++) {
 				sum = 0;
 
@@ -77,7 +82,11 @@ int main(int argc, char* argv[])
 				sum -= A[i * M + i] * last_x[i];	// opt: outside the loop for sse optimizer
 				x[i] = (1 - alpha) * last_x[i] + alpha * (b[i] - sum) / A[i * M + i];
 			}
-			iterations++;
+
+			#pragma omp single nowait
+			{
+				iterations++;
+			}
 		}
 		const double end_time = omp_get_wtime();
 		const double seconds_spent = end_time - start_time;
@@ -104,6 +113,7 @@ int main(int argc, char* argv[])
 		printf("RMSE: %0.10f\n", all_rmse[k]);
 		printf("iterations: %d\nseconds: %0.10f\n", iterations, seconds_spent);
 
+		assert(x != last_x);
 		free(dataset.A);
 		free(dataset.x);
 		free(dataset.b);
