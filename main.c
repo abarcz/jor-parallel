@@ -21,6 +21,7 @@ void swap(double** a, double** b)
 	*b = c;
 }
 
+/** call: ./main <matrix_dimension> <number_of_tests> */
 int main(int argc, char* argv[])
 {
 	if (argc != 3) {
@@ -73,7 +74,7 @@ int main(int argc, char* argv[])
 			for (i = 0; i < M; i++) {
 				sum = 0;
 
-				//#pragma omp target map(to: A, last_x) map(from: sum)a
+				//#pragma omp target map(to: A, last_x) map(from: sum)
 				#pragma omp simd reduction(+: sum) aligned(A, last_x: 16) linear(j)
 				for (j = 0; j < M; j++) {
 					sum += A[i * M + j] * last_x[j];
