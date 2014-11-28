@@ -1,7 +1,6 @@
 
 #include "amatrix.h"
 #include <omp.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -13,37 +12,6 @@
  * Author: Aleksy Barcz
  *
  */
-
-
-/** return the absolute scalar differene between arrays */
-double array_diff(const double a[], const double b[], const int size)
-{
-	double diff = 0;
-	for (int i = 0; i < size; i++){
-		diff += fabs(a[i] - b[i]);
-	}
-	return diff;
-}
-
-/** print array to stdout */
-void print_array(const double a[], const int size)
-{
-	for (int i = 0; i < size; i++) {
-		printf("%f, ", a[i]);
-	}
-	printf("\n");
-}
-
-/** calculate RMSE between two arrays */
-double rmse(const double a[], const double b[], const int size)
-{
-	double res = 0;
-	for (int i = 0; i < size; i++) {
-		res += pow((a[i] - b[i]), 2);
-	}
-	res = sqrt(res);
-	return res;
-}
 
 void swap(double** a, double** b)
 {
@@ -69,6 +37,8 @@ int main(int argc, char* argv[])
 	const double min_diff = 0.000001;
 	const double alpha = 1.01;
 
+	double* exec_times = malloc(tests * sizeof(double));
+	double* all_rmse = malloc(tests * sizeof(double));
 	for (int k = 0; k < tests; k++) {
 
 		const DataSet dataset = generate_dataset(M);
@@ -111,6 +81,7 @@ int main(int argc, char* argv[])
 		}
 		const double end_time = omp_get_wtime();
 		const double seconds_spent = end_time - start_time;
+		exec_times[k] = seconds_spent;
 
 		if (verbose) {
 			printf("diff: %f\n", array_diff(x, last_x, M));
@@ -129,10 +100,20 @@ int main(int argc, char* argv[])
 			printf("resulting b: ");
 			print_array(bx, M);
 		}
-		printf("RMSE: %0.10f\n", rmse(bx, b, M));
+		all_rmse[k] = rmse(bx, b, M);
+		printf("RMSE: %0.10f\n", all_rmse[k]);
 		printf("iterations: %d\nseconds: %0.10f\n", iterations, seconds_spent);
 
+		free(dataset.A);
+		free(dataset.x);
+		free(dataset.b);
+		free(x);
+		free(last_x);
 	}
+	printf("Time: mean %0.10f std %0.10f\n", array_mean(exec_times, tests), array_std(exec_times, tests));
+	printf("RMSE: mean %0.10f std %0.10f\n", array_mean(all_rmse, tests), array_std(all_rmse, tests));
+	free(all_rmse);
+	free(exec_times);
 
 	return 0;
 }

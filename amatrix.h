@@ -35,4 +35,17 @@ typedef struct DataSet
 
 DataSet generate_dataset(const int rows);
 
+/** return the absolute scalar differene between arrays */
+double array_diff(const double a[], const double b[], const int size);
+
+double array_mean(const double* a, const int size);
+
+double array_std(const double* a, const int size);
+
+/** print array to stdout */
+void print_array(const double a[], const int size);
+
+/** calculate RMSE between two arrays */
+double rmse(const double a[], const double b[], const int size);
+
 #endif

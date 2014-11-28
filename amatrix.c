@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <malloc.h>
+#include <math.h>
 
 double* aligned_vector(const int size, bool randomize)
 {
@@ -72,3 +73,51 @@ DataSet generate_dataset(const int rows)
 	dataset.b = aligned_multiply(dataset.A, dataset.x, rows);
 	return dataset;
 }
+
+double array_diff(const double a[], const double b[], const int size)
+{
+	double diff = 0;
+	for (int i = 0; i < size; i++) {
+		diff += fabs(a[i] - b[i]);
+	}
+	return diff;
+}
+
+double array_mean(const double* a, const int size)
+{
+	double mean = 0;
+	for (int i = 0; i < size; i++) {
+		mean += a[i];
+	}
+	mean /= size;
+	return mean;
+}
+
+double array_std(const double* a, const int size)
+{
+	const double mean = array_mean(a, size);
+	double acc = 0;
+	for (int i = 0; i < size; i++) {
+		acc += pow(a[i] - mean, 2);
+	}
+	return sqrt(acc);
+}
+
+void print_array(const double a[], const int size)
+{
+	for (int i = 0; i < size; i++) {
+		printf("%f, ", a[i]);
+	}
+	printf("\n");
+}
+
+double rmse(const double a[], const double b[], const int size)
+{
+	double res = 0;
+	for (int i = 0; i < size; i++) {
+		res += pow((a[i] - b[i]), 2);
+	}
+	res = sqrt(res);
+	return res;
+}
+
