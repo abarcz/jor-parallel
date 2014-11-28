@@ -1,0 +1,115 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=RoyalBlue]{hyperref}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{alltt}
+\usepackage{booktabs} % eleganckie tabelki
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\newcounter{liczp}
+\newenvironment{example}{\refstepcounter{liczp}{\noindent
+{\bf Przykład~\theliczp:}\,}}
+
+
+\addtolength{\textwidth}{4cm}
+\addtolength{\hoffset}{-2cm}
+\addtolength{\textheight}{4cm}
+\addtolength{\voffset}{-2cm}
+\date {\today}
+\author {Aleksy Barcz}
+\title{Zrównoleglenie i wektoryzacja algorytmu JOR (OpenMP)\\sprawozdanie}
+\begin{document}
+\maketitle
+
+\section{Algorytm JOR}
+Algorytm zaimplementowano zgodnie ze wzorem:
+\begin{equation}
+\phi_j^{i+1} \; = \; (1-\alpha) \phi_j^i \, + \, \frac{\alpha}
+{A_{jj}} \, \left(b_j - \sum_{k\not=j} A_{jk}
+\phi_k^i\right)
+\end{equation}
+(\url{http://staffweb.cms.gre.ac.uk/~ct02/research/thesis/node36.html})\\
+Wartość $\alpha$ ustalono na $1.01$, jako że większe wartości znacząco zwiększały ilość potrzebnych iteracji.
+
+\section{Narzędzia}
+Projekt wykonano przy użyciu gcc w wersji 4.9.1 oraz zawartej biblioteki OpenMP. 
+
+Eksperymenty ze zrównoleglaniem przeprowadzono na 8-rdzeniowym procesorze Intel Xeon  E3-1230 @ 3.30GHz. Przedstawiono wyniki dla dynamicznego przydziału pracy dla wątków. Dla przydziału statycznego najlepsze wyniki uzyskano przy ustaleniu liczby wątków na 8 i były to wyniki minimalnie gorsze od przedstawionych.
+
+Eksperymenty z wektoryzacją przeprowadzono na procesorze Intel Core2 Duo T6670 @ 2.20GHz, gdyż gcc (zarówno z jak i bez OpenMP) nie obsługuje wektoryzacji na procesorach Intel Xeon. W trakcie pracy próbowano wykorzystać możliwości automatycznej wektoryzacji gcc, zgodnie z wytycznymi ze strony: \url{http://locklessinc.com/articles/vectorize/}, ale o ile dla podanych testowych problemów wektoryzacja działała i w kodzie asemblerowym pojawiały się instrukcje SSE (addpd, mulpd), to nie udało się uzyskać podobnej wektoryzacji dla wewnętrznej pętli programu. Koniec końców, wykorzystano wektoryzację oferowaną przez OpenMP, która była w stanie wygenerować kod korzystający z instrukcji SSE (addpd, mulpd).
+
+\section{Zastosowane metody zrównoleglania / wektoryzacji}
+W projekcie porównano działanie algorytmu dla trzech wersji:
+\begin{enumerate}
+	\item algorytm bez optymalizacji,
+	\item algorytm z wektoryzacją wewnętrznej pętli (OpenMP, SSE),
+	\item algorytm ze zrównolegleniem wątkowym obu pętli (OpenMP).
+\end{enumerate}
+W każdym przypadku, dzięki zastosowaniu tego samego ziarna generatora liczb losowych, przetwarzane było te same dziesięć macierzy określonego rozmiaru, dla rozmiarów (ilość wierszy kwadratowej macierzy A): 512, 1024, 2048.
+
+\section{Wyniki}
+Przedstawione wyniki, uśrednione dla 10ciu macierzy każdego rozmiaru, pokazują duży zysk czasowy w przypadku użycia metody zrównoleglenia wątkowego. Co ciekawe, współczynnik przyspieszenia okazał się niższy dla bardzo dużych macierzy: 2048x2048. Użycie wektoryzacji nie dało istotnie lepszych wyników niż algorytm bez optymalizacji. Prawdopodobnie przyczyną jest ograniczona wektorowość problemu - dane ładowane do rejestrów XMM po 2 zmienne double na raz były tylko raz wymnażane wektorowo, po czym dodawane do zmiennej skalarnej. Gdyby ilość kolejnych operacji wektorowych na tych danych była większa, wynik SSE byłby prawdopodobnie lepszy. Wyniki jakościowe to RMSE policzone na różnicy wektora $b = Ax$ (obliczonego z wykorzystaniem obliczonej wartości $x$) względem oryginalnego wektora $b$. Uśrednione RMSE okazało się identyczne dla wszystkich trzech wersji algorytmu, na obu procesorach. Ostatnim ciekawym spostrzeżeniem jest, że szybszy Xeon potrzebował więcej czasu na obliczenia jednowątkowe niż teoretycznie wolniejszy CoreDuo. Być może jest to skutkiem kiepskiego wsparcia ze strony gcc, które generowało na Xeonie dużo instrukcji korzystających z jednostki x87 (\url{http://users.abo.fi/mats/codeopt2013/slides/IntelCore_i7.pdf}).
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+rozmiar macierzy & bez opt. &  SSE \\
+\midrule
+512 & 0.15 (0.06) & 0.15 (0.05) \\
+1024 & 1.04 (0.37) & 1.04 (0.40) \\
+2048 & 7.11 (3.95) & 6.85 (3.60) \\
+\bottomrule
+\end{tabular}
+\caption{CoreDuo: Średni czas działania [s] (odchylenie std.)}
+\end{center}
+\end{table}
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+rozmiar macierzy & bez opt. &  wątki \\
+\midrule
+512 & 0.25 (0.09) & 0.04 (0.02) \\
+1024 & 1.64 (0.59) & 0.26 (0.10) \\
+2048 & 10.66 (5.46) & 2.77 (1.46) \\
+\bottomrule
+\end{tabular}
+\caption{Xeon: Średni czas działania [s] (odchylenie std.)}
+\end{center}
+\end{table}
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+rozmiar macierzy &  wątki \\
+\midrule
+512 & 6.25 \\
+1024 & 6.30 \\
+2048 & 3.84 \\
+\bottomrule
+\end{tabular}
+\caption{Xeon: Współczynnik przyspieszenia}
+\end{center}
+\end{table}
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+rozmiar macierzy & RMSE(b, bcalc) \\
+\midrule
+512  & 0.0000112 (0.0000004)  \\
+1024 & 0.0000158 (0.0000004)  \\
+2048 & 0.0000226 (0.0000006)  \\
+\bottomrule
+\end{tabular}
+\caption{CoreDuo i Xeon: RMSE (odchylenie std.)}
+\end{center}
+\end{table}
+
+\end{document}
