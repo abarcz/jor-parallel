@@ -113,7 +113,7 @@ rozmiar macierzy & RMSE(b, bcalc) \\
 \end{table}
 
 \section{Wyniki - float}
-W celu weryfikacji działania wektoryzacji na innym typie danych, użyto zamiast 64bitowego double, 32bitowy typ float. Wpływ mniejszej precyzji typu float był widoczny - konieczne było zmniejszenie współczynnika zbieżności (minimalnej zmiany $x$) z $0.000001$ na $0.009$ - bez tego algorytm był rozbieżny już dla macierzy rozmiaru 1024x1024. Zmniejszenie wymagań dla zbieżności $x$ poskutkowało ogromnym skokiem RMSE, co czyni z praktycznego punktu widzenia ten algorytm bezużytecznym. Zaobserwowano natomiast istotne zmniejszenie czasu działania dzięki wektoryzacji. W generowanym asemblerze widać instrukcje addss i mulss, operujące na czterech zmiennych typu float jednocześnie - stąd przyspieszenie. Nie widać istotnej różnicy w RMSE między obliczeniami z wektoryzacją i bez.
+W celu weryfikacji działania wektoryzacji na innym typie danych, użyto zamiast 64bitowego double, 32bitowy typ float. Wpływ mniejszej precyzji typu float był widoczny - konieczne było zmniejszenie współczynnika zbieżności (minimalnej zmiany $x$) z $0.000001$ na $0.009$ - bez tego algorytm był rozbieżny już dla macierzy rozmiaru 1024x1024. Zmniejszenie wymagań dla zbieżności $x$ poskutkowało zmniejszeniem ilości iteracji i ogromnym skokiem RMSE, co czyni z praktycznego punktu widzenia ten algorytm bezużytecznym. Zaobserwowano natomiast istotne zmniejszenie czasu działania dzięki wektoryzacji. W generowanym asemblerze widać instrukcje addss i mulss, operujące na czterech zmiennych typu float jednocześnie - stąd przyspieszenie. Nie widać istotnej różnicy w RMSE między obliczeniami z wektoryzacją i bez.
 
 \begin{table}[h!]
 \begin{center}
