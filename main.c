@@ -14,9 +14,9 @@
  *
  */
 
-void swap(double** a, double** b)
+void swap(fp_t** a, fp_t** b)
 {
-	double* c = *a;
+	fp_t* c = *a;
 	*a = *b;
 	*b = c;
 }
@@ -36,17 +36,17 @@ int main(int argc, char* argv[])
 	srand(0);
 
 	const bool verbose = false;
-	const double min_diff = 0.000001;
-	const double alpha = 1.01;
+	const fp_t min_diff = 0.009;
+	const fp_t alpha = 1.01;
 
-	double* exec_times = malloc(tests * sizeof(double));
-	double* all_rmse = malloc(tests * sizeof(double));
+	fp_t* exec_times = malloc(tests * sizeof(fp_t));
+	fp_t* all_rmse = malloc(tests * sizeof(fp_t));
 	for (int k = 0; k < tests; k++) {
 
 		const DataSet dataset = generate_dataset(M);
 
-		double* last_x = aligned_vector(M, false);
-		double* x = aligned_vector(M, false);
+		fp_t* last_x = aligned_vector(M, false);
+		fp_t* x = aligned_vector(M, false);
 		for (int i = 0; i < M; i++) {
 			x[i] = 1;
 		}
@@ -54,28 +54,29 @@ int main(int argc, char* argv[])
 		int iterations = 0;
 
 		// solve Ax = b
-		const double start_time = omp_get_wtime();
+		const fp_t start_time = omp_get_wtime();
 
-		double sum = 0;
+		fp_t sum = 0;
 		int j = 0;
 		int i = 0;
-		const double* A = dataset.A;
-		const double* b = dataset.b;
+		const fp_t* A = dataset.A;
+		const fp_t* b = dataset.b;
 		assert(x != last_x);
-		#pragma omp parallel shared(last_x, x, iterations) private(i, j, sum)
+		//fp_t* sumv = aligned_vector(M, false);
+		//#pragma omp parallel shared(last_x, x, iterations) private(i, j, sum)
 		while (array_diff(x, last_x, M) > min_diff) {
-			#pragma omp single
+			//#pragma omp single
 			{
 				swap(&last_x, &x);
 			}
 
 			// A, M, alpha and b are constant, so they cannot be declared as shared
-			#pragma omp for schedule(dynamic)
+			//#pragma omp for schedule(dynamic)
 			for (i = 0; i < M; i++) {
 				sum = 0;
 
 				//#pragma omp target map(to: A, last_x) map(from: sum)
-				#pragma omp simd reduction(+: sum) aligned(A, last_x: 16) linear(j)
+				#pragma omp simd aligned(A, last_x: 16) reduction(+:sum) linear(j)
 				for (j = 0; j < M; j++) {
 					sum += A[i * M + j] * last_x[j];
 				}
@@ -84,13 +85,13 @@ int main(int argc, char* argv[])
 				x[i] = (1 - alpha) * last_x[i] + alpha * (b[i] - sum) / A[i * M + i];
 			}
 
-			#pragma omp single nowait
+			//#pragma omp single nowait
 			{
 				iterations++;
 			}
 		}
-		const double end_time = omp_get_wtime();
-		const double seconds_spent = end_time - start_time;
+		const fp_t end_time = omp_get_wtime();
+		const fp_t seconds_spent = end_time - start_time;
 		exec_times[k] = seconds_spent;
 
 		if (verbose) {
@@ -100,7 +101,7 @@ int main(int argc, char* argv[])
 			printf("expected_x: ");
 			print_array(dataset.x, M);
 		}
-		double* bx = aligned_vector(M, false);
+		fp_t* bx = aligned_vector(M, false);
 		for (int i = 0; i < M; i++) {
 			for (int j = 0; j < M; j++) {
 				bx[i] += A[i * M + j] * x[j];

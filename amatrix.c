@@ -4,16 +4,16 @@
 #include <malloc.h>
 #include <math.h>
 
-double* aligned_vector(const int size, bool randomize)
+fp_t* aligned_vector(const int size, bool randomize)
 {
-	double* v = memalign(ALIGN_BYTES, size * sizeof(double));
+	fp_t* v = memalign(ALIGN_BYTES, size * sizeof(fp_t));
 	if (v == NULL) {
 		printf("Error allocating memory!");
 		exit(-1);
 	}
 	if (randomize) {
 		for (int i = 0; i < size; i++) {
-			v[i] = (double)rand() / RAND_MAX;
+			v[i] = (fp_t)rand() / RAND_MAX;
 		}
 	} else {
 		for (int i = 0; i < size; i++) {
@@ -23,16 +23,16 @@ double* aligned_vector(const int size, bool randomize)
 	return v;
 }
 
-double* aligned_matrix(const int rows, bool randomize)
+fp_t* aligned_matrix(const int rows, bool randomize)
 {
 	return aligned_vector(rows * rows, randomize);
 }
 
-double get_max_row_sum(double* matrix, const int rows)
+fp_t get_max_row_sum(fp_t* matrix, const int rows)
 {
-	double max_row_sum = 0;
+	fp_t max_row_sum = 0;
 	for (int i = 0; i < rows; i++) {
-		double row_sum = 0;
+		fp_t row_sum = 0;
 		for (int j = 0; j < rows; j++) {
 			row_sum += matrix[i * rows + j];
 		}
@@ -43,18 +43,18 @@ double get_max_row_sum(double* matrix, const int rows)
 	return max_row_sum;
 }
 
-double* make_diag_dominant(double* matrix, const int rows)
+fp_t* make_diag_dominant(fp_t* matrix, const int rows)
 {
-	const double max_row_sum = get_max_row_sum(matrix, rows);
+	const fp_t max_row_sum = get_max_row_sum(matrix, rows);
 	for (int i = 0; i < rows; i++) {
 		matrix[i * rows + i] += (1 + rand() / RAND_MAX) * max_row_sum;
 	}
 	return matrix;
 }
 
-double* aligned_multiply(const double* matrix, const double* vector, const int rows)
+fp_t* aligned_multiply(const fp_t* matrix, const fp_t* vector, const int rows)
 {
-	double* b = aligned_vector(rows, false);
+	fp_t* b = aligned_vector(rows, false);
 	const int size = rows;
 	for (int i = 0; i < size; i++) {
 		b[i] = 0;
@@ -74,18 +74,18 @@ DataSet generate_dataset(const int rows)
 	return dataset;
 }
 
-double array_diff(const double a[], const double b[], const int size)
+fp_t array_diff(const fp_t a[], const fp_t b[], const int size)
 {
-	double diff = 0;
+	fp_t diff = 0;
 	for (int i = 0; i < size; i++) {
 		diff += fabs(a[i] - b[i]);
 	}
 	return diff;
 }
 
-double array_mean(const double* a, const int size)
+fp_t array_mean(const fp_t* a, const int size)
 {
-	double mean = 0;
+	fp_t mean = 0;
 	for (int i = 0; i < size; i++) {
 		mean += a[i];
 	}
@@ -93,17 +93,17 @@ double array_mean(const double* a, const int size)
 	return mean;
 }
 
-double array_std(const double* a, const int size)
+fp_t array_std(const fp_t* a, const int size)
 {
-	const double mean = array_mean(a, size);
-	double acc = 0;
+	const fp_t mean = array_mean(a, size);
+	fp_t acc = 0;
 	for (int i = 0; i < size; i++) {
 		acc += pow(a[i] - mean, 2);
 	}
 	return sqrt(acc);
 }
 
-void print_array(const double a[], const int size)
+void print_array(const fp_t a[], const int size)
 {
 	for (int i = 0; i < size; i++) {
 		printf("%f, ", a[i]);
@@ -111,9 +111,9 @@ void print_array(const double a[], const int size)
 	printf("\n");
 }
 
-double rmse(const double a[], const double b[], const int size)
+fp_t rmse(const fp_t a[], const fp_t b[], const int size)
 {
-	double res = 0;
+	fp_t res = 0;
 	for (int i = 0; i < size; i++) {
 		res += pow((a[i] - b[i]), 2);
 	}

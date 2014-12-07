@@ -112,4 +112,53 @@ rozmiar macierzy & RMSE(b, bcalc) \\
 \end{center}
 \end{table}
 
+\section{Wyniki - float}
+W celu weryfikacji działania wektoryzacji na innym typie danych, użyto zamiast 64bitowego double, 32bitowy typ float. Wpływ mniejszej precyzji typu float był widoczny - konieczne było zmniejszenie współczynnika zbieżności (minimalnej zmiany $x$) z $0.000001$ na $0.009$ - bez tego algorytm był rozbieżny już dla macierzy rozmiaru 1024x1024. Zmniejszenie wymagań dla zbieżności $x$ poskutkowało ogromnym skokiem RMSE, co czyni z praktycznego punktu widzenia ten algorytm bezużytecznym. Zaobserwowano natomiast istotne zmniejszenie czasu działania dzięki wektoryzacji. W generowanym asemblerze widać instrukcje addss i mulss, operujące na czterech zmiennych typu float jednocześnie - stąd przyspieszenie. Nie widać istotnej różnicy w RMSE między obliczeniami z wektoryzacją i bez.
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+rozmiar macierzy & bez opt. &  SSE \\
+\midrule
+512  & 0.08 (0.03) & 0.04 (0.01) \\
+1024 & 0.54 (0.19) & 0.34 (0.13) \\
+2048 & 3.55 (1.86) & 2.21 (1.19) \\
+\bottomrule
+\end{tabular}
+\caption{CoreDuo, float: Średni czas działania [s] (odchylenie std.)}
+\end{center}
+\end{table}
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+rozmiar macierzy &  SSE \\
+\midrule
+512  & 2.00 \\
+1024 & 1.58 \\
+2048 & 1.60 \\
+\bottomrule
+\end{tabular}
+\caption{CoreDuo, float: Współczynnik przyspieszenia}
+\end{center}
+\end{table}
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+rozmiar macierzy & bez opt. & SSE \\
+\midrule
+512  & 0.09933 (0.00401) & 0.09979 (0.00568) \\
+1024 & 0.14321 (0.00569) & 0.14257 (0.00440) \\
+2048 & 0.20403 (0.00587) & 0.20640 (0.00684) \\
+\bottomrule
+\end{tabular}
+\caption{CoreDuo, float: RMSE (odchylenie std.)}
+\end{center}
+\end{table}
+
+
 \end{document}
