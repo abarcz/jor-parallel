@@ -2,6 +2,7 @@
 #define _AMATRIX_H_
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 /**
  *
@@ -14,7 +15,14 @@
 #define ALIGN_BYTES 16
 
 // choose floating point type for the library
-typedef float fp_t;
+typedef double fp_t;
+
+/** generate random numer from [min, max] */
+inline fp_t get_random(fp_t min, fp_t max)
+{
+	const fp_t range = max - min;
+	return ((fp_t)rand() * range) / RAND_MAX + min;
+}
 
 /** allocate aligned memory block */
 fp_t* aligned_vector(const int size, bool randomize);

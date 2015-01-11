@@ -36,8 +36,8 @@ int main(int argc, char* argv[])
 	srand(0);
 
 	const bool verbose = false;
-	const fp_t min_diff = 0.009;
-	const fp_t alpha = 1.01;
+	const fp_t min_diff = 0.000001;
+	const fp_t alpha = 0.9;
 
 	fp_t* exec_times = malloc(tests * sizeof(fp_t));
 	fp_t* all_rmse = malloc(tests * sizeof(fp_t));
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 				sum = 0;
 
 				//#pragma omp target map(to: A, last_x) map(from: sum)
-				#pragma omp simd aligned(A, last_x: 16) reduction(+:sum) linear(j)
+				//#pragma omp simd aligned(A, last_x: 16) reduction(+:sum) linear(j)
 				for (j = 0; j < M; j++) {
 					sum += A[i * M + j] * last_x[j];
 				}

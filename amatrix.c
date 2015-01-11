@@ -1,6 +1,5 @@
 #include "amatrix.h"
 
-#include <stdlib.h>
 #include <malloc.h>
 #include <math.h>
 
@@ -13,7 +12,7 @@ fp_t* aligned_vector(const int size, bool randomize)
 	}
 	if (randomize) {
 		for (int i = 0; i < size; i++) {
-			v[i] = (fp_t)rand() / RAND_MAX;
+			v[i] = get_random(-5, 5);
 		}
 	} else {
 		for (int i = 0; i < size; i++) {
@@ -28,14 +27,20 @@ fp_t* aligned_matrix(const int rows, bool randomize)
 	return aligned_vector(rows * rows, randomize);
 }
 
+fp_t get_abs_row_sum(fp_t* matrix, const int row, const int rows)
+{
+	fp_t row_sum = 0;
+	for (int j = 0; j < rows; j++) {
+		row_sum += fabs(matrix[row * rows + j]);
+	}
+	return row_sum;
+}
+
 fp_t get_max_row_sum(fp_t* matrix, const int rows)
 {
 	fp_t max_row_sum = 0;
 	for (int i = 0; i < rows; i++) {
-		fp_t row_sum = 0;
-		for (int j = 0; j < rows; j++) {
-			row_sum += matrix[i * rows + j];
-		}
+		const fp_t row_sum = get_abs_row_sum(matrix, i, rows);
 		if (row_sum > max_row_sum) {
 			max_row_sum = row_sum;
 		}
@@ -45,9 +50,12 @@ fp_t get_max_row_sum(fp_t* matrix, const int rows)
 
 fp_t* make_diag_dominant(fp_t* matrix, const int rows)
 {
-	const fp_t max_row_sum = get_max_row_sum(matrix, rows);
 	for (int i = 0; i < rows; i++) {
-		matrix[i * rows + i] += (1 + rand() / RAND_MAX) * max_row_sum;
+		const fp_t row_sum = get_abs_row_sum(matrix, i, rows);
+		matrix[i * rows + i] += get_random(1, 1.5) * (row_sum - fabs(matrix[i * rows + i]));
+		if (get_random(-1, 1) < 0) {
+			matrix[i * rows + i] = -matrix[i * rows + i];
+		}
 	}
 	return matrix;
 }
