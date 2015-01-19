@@ -4,6 +4,12 @@
 #include <math.h>
 #include <assert.h>
 
+fp_t get_random(fp_t min, fp_t max)
+{
+	const fp_t range = max - min;
+	return ((fp_t)rand() * range) / RAND_MAX + min;
+}
+
 Matrix* aligned_vector(const int size, bool randomize)
 {
 	fp_t* v = memalign(ALIGN_BYTES, size * sizeof(fp_t));
@@ -23,6 +29,7 @@ Matrix* aligned_vector(const int size, bool randomize)
 	Matrix* m = malloc(sizeof(Matrix));
 	m->width = size;
 	m->height = 1;
+	m->size = size;
 	m->elements = v;
 	return m;
 }
@@ -32,6 +39,7 @@ Matrix* aligned_matrix(const int rows, bool randomize)
 	Matrix* m = aligned_vector(rows * rows, randomize);
 	m->height = rows;
 	m->width = rows;
+	m->size = rows * rows;
 	return m;
 }
 
@@ -58,13 +66,10 @@ fp_t get_max_row_sum(const Matrix* matrix)
 
 Matrix* make_diag_dominant(Matrix* matrix)
 {
+	const fp_t row_sum = get_max_row_sum(matrix);
 	for (int i = 0; i < matrix->width; i++) {
-		const fp_t row_sum = get_abs_row_sum(matrix, i);
 		const int index = i * matrix->width + i;
-		matrix->elements[index] += get_random(1, 1.5) * (row_sum - fabs(matrix->elements[index]));
-		if (get_random(-1, 1) < 0) {
-			matrix->elements[index] = -matrix->elements[index];
-		}
+		matrix->elements[index] += get_random(1.5, 2) * (row_sum - fabs(matrix->elements[index]));
 	}
 	return matrix;
 }
@@ -72,7 +77,7 @@ Matrix* make_diag_dominant(Matrix* matrix)
 Matrix* aligned_multiply(const Matrix* matrix, const Matrix* vector)
 {
 	assert(matrix->width == vector->width);
-	Matrix* b = aligned_vector(matrix->width, false);
+	Matrix* b = aligned_vector(matrix->height, false);
 	const int size = matrix->width;
 	for (int i = 0; i < size; i++) {
 		b->elements[i] = 0;
@@ -97,11 +102,14 @@ fp_t matrix_diff(const Matrix* a, const Matrix* b)
 	assert(a->width == b->width);
 	assert(a->height == b->height);
 	const int size = a->width;
-	fp_t diff = 0;
+	fp_t max_diff = 0;
+	fp_t curr_diff;
 	for (int i = 0; i < size; i++) {
-		diff += fabs(a->elements[i] - b->elements[i]);
+		curr_diff = fabs(a->elements[i] - b->elements[i]);
+		if (curr_diff > max_diff)
+			max_diff = curr_diff;
 	}
-	return diff;
+	return max_diff;
 }
 
 fp_t array_mean(const fp_t* a, const int size)
@@ -126,8 +134,10 @@ fp_t array_std(const fp_t* a, const int size)
 
 void print_matrix(const Matrix* a)
 {
-	for (int i = 0; i < a->width; i++) {
-		printf("%f, ", a->elements[i]);
+	for (int i = 0; i < a->height; i++) {
+		for (int j = 0; j < a->width; j++) {
+			printf("%f, ", a->elements[i * a->width + j]);
+		}
 	}
 	printf("\n");
 }

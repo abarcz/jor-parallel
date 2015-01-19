@@ -14,11 +14,7 @@
  */
 
 /** generate random numer from [min, max] */
-inline fp_t get_random(fp_t min, fp_t max)
-{
-	const fp_t range = max - min;
-	return ((fp_t)rand() * range) / RAND_MAX + min;
-}
+fp_t get_random(fp_t min, fp_t max);
 
 /** allocate aligned memory block */
 Matrix* aligned_vector(const int size, bool randomize);
@@ -39,13 +35,6 @@ typedef struct DataSet
 	Matrix* b;
 	Matrix* x;
 } DataSet;
-
-inline void free_dataset(DataSet d)
-{
-	free_matrix(d.A);
-	free_matrix(d.b);
-	free_matrix(d.x);
-}
 
 DataSet generate_dataset(const int rows);
 

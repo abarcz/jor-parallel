@@ -15,20 +15,15 @@
 #define ALIGN_BYTES 16
 
 // choose floating point type for the library
-typedef float fp_t;
+typedef double fp_t;
 
 // Matrices are stored in row-major order:
 // M(row, col) = *(M.elements + row * M.width + col)
 typedef struct {
 	int width;
 	int height;
+	int size;
 	fp_t* elements;
 } Matrix;
-
-inline void free_matrix(Matrix* m)
-{
-	free(m->elements);
-	free(m);
-}
 
 #endif
