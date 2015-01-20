@@ -15,7 +15,14 @@
 #define ALIGN_BYTES 16
 
 // choose floating point type for the library
-typedef double fp_t;
+#define DOUBLE
+#ifdef DOUBLE
+	typedef double fp_t;
+#else
+	typedef float fp_t;
+	// choose texture usage
+	#define TEXTURE
+#endif
 
 // Matrices are stored in row-major order:
 // M(row, col) = *(M.elements + row * M.width + col)

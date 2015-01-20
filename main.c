@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <cuda.h>
 #include <cuda_runtime.h>
 
 /**
@@ -18,6 +19,7 @@
  *
  */
 
+
 void swap(Matrix* a, Matrix* b)
 {
 	assert(a->height == b->height);
@@ -27,10 +29,20 @@ void swap(Matrix* a, Matrix* b)
 	b->elements = c;
 }
 
+const bool verbose = false;
+
+void print_cuda_elapsed(fp_t start_time)
+{
+	cudaDeviceSynchronize();
+	printf("%dms spent\n", (int)((omp_get_wtime() - start_time) * 1000));
+}
+
 extern int cuda_identify();
 extern void cuda_multiply(Matrix d_matrix, Matrix d_vector, Matrix d_result);
-extern void cuda_reduce(const Matrix d_A, const Matrix d_b, const Matrix d_sum_matrix, Matrix* d_x, Matrix* d_last_x, const fp_t alpha);
+extern void cuda_reduce(const Matrix d_A, const Matrix d_b, const Matrix d_c, Matrix* d_x, Matrix* d_last_x, const fp_t alpha);
 extern void cuda_diff(const Matrix d_a, const Matrix d_b, fp_t* result);
+extern void texbind(float* array, int size);
+extern void texunbind();
 
 
 Matrix* device_matrix(const int width)
@@ -53,7 +65,7 @@ Matrix* device_matrix_from(const Matrix* host_matrix)
 	return m;
 }
 
-/** call: ./main <matrix_dimension> <number_of_tests> */
+/** call: ./main <matrix_dimension> <number_of_tests> <use_gpu>*/
 int main(int argc, char* argv[])
 {
 	cuda_identify();
@@ -70,9 +82,11 @@ int main(int argc, char* argv[])
 	// always use the same seed to get the same matrices during tests
 	srand(0);
 
-	const bool verbose = false;
-	const fp_t min_diff = 0.000001;
-	//const fp_t min_diff = 0.00000001;	//for double, fails with 8192 and floats on cpu
+	#ifdef DOUBLE
+		const fp_t min_diff = 0.00000001;	//for double, fails with 8192 and floats on both cpu and gpu
+	#else
+		const fp_t min_diff = 0.000001;
+	#endif
 	const fp_t alpha = 0.9;
 	const int max_iter = 50;
 
@@ -113,7 +127,6 @@ int main(int argc, char* argv[])
 				for (i = 0; i < M; i++) {
 					sum = 0;
 
-					//#pragma omp target map(to: A, last_x) map(from: sum)
 					//#pragma omp simd aligned(A, last_x: 16) reduction(+:sum) linear(j)
 					for (j = 0; j < M; j++) {
 						sum += A->elements[i * M + j] * last_x->elements[j];
@@ -131,13 +144,18 @@ int main(int argc, char* argv[])
 			}
 		} else {
 			Matrix* d_A = device_matrix_from(A);
+			#ifndef DOUBLE
+				#ifdef TEXTURE
+					texbind(d_A->elements, d_A->size * sizeof(fp_t));
+				#endif
+			#endif
 			cudaMemcpy(d_A->elements, A->elements, A->size * sizeof(fp_t), cudaMemcpyHostToDevice);
 
-			Matrix* d_b = device_matrix_from(A);
+			Matrix* d_b = device_matrix_from(b);
 			cudaMemcpy(d_b->elements, b->elements, b->size * sizeof(fp_t), cudaMemcpyHostToDevice);
 
 			Matrix* d_last_x = device_matrix_from(last_x);
-			Matrix* d_sum_matrix = device_matrix(M);
+			Matrix* d_c = device_matrix_from(b);
 			Matrix* d_x = device_matrix_from(x);
 			cudaMemcpy(d_x->elements, x->elements, x->size * sizeof(fp_t), cudaMemcpyHostToDevice);
 			cudaMemcpy(d_last_x->elements, last_x->elements, last_x->size * sizeof(fp_t), cudaMemcpyHostToDevice);
@@ -146,43 +164,44 @@ int main(int argc, char* argv[])
 			fp_t* d_x_diff;
 			cudaMalloc((void**)&d_x_diff, sizeof(fp_t));
 
-			fp_t stime;
+			//fp_t stime;
 			while ((x_diff > min_diff) && (max_iter < 0 || iterations < max_iter)) {
-				stime = omp_get_wtime();
-				cuda_multiply(*d_A, *d_last_x, *d_sum_matrix);
-				cudaDeviceSynchronize();
-				printf("%dus spent\n", (int)((omp_get_wtime() - stime) * 1000000));
+				//stime = omp_get_wtime();
+				cuda_multiply(*d_A, *d_last_x, *d_c);
+				//print_cuda_elapsed(stime);
 
-				stime = omp_get_wtime();
-				cuda_reduce(*d_A, *d_b, *d_sum_matrix, d_x, d_last_x, alpha); //performs swap
-				cudaDeviceSynchronize();
-				printf("%dus spent\n", (int)((omp_get_wtime() - stime) * 1000000));
+				//stime = omp_get_wtime();
+				cuda_reduce(*d_A, *d_b, *d_c, d_x, d_last_x, alpha); //performs swap
+				//print_cuda_elapsed(stime);
 
-				stime = omp_get_wtime();
+				//stime = omp_get_wtime();
 				cuda_diff(*d_x, *d_last_x, d_x_diff);
-				cudaDeviceSynchronize();
-				printf("%dus spent\n", (int)((omp_get_wtime() - stime) * 1000000));
+				//print_cuda_elapsed(stime);
 
 				iterations++;
 				//cudaMemcpyFromSymbol(&x_diff, "d_x_diff", sizeof(x_diff), 0, cudaMemcpyDeviceToHost);
-				stime = omp_get_wtime();
+				//stime = omp_get_wtime();
 				cudaMemcpy(&x_diff, d_x_diff, sizeof(fp_t), cudaMemcpyDeviceToHost);
-				cudaDeviceSynchronize();
-				printf("%dus spent\n", (int)((omp_get_wtime() - stime) * 1000000));
+				//print_cuda_elapsed(stime);
 			}
 			// copy last_x instead, as it was swapped
 			cudaMemcpy(x->elements, d_last_x->elements, x->size * sizeof(fp_t), cudaMemcpyDeviceToHost);
 
+			#ifndef DOUBLE
+				#ifdef TEXTURE
+					texunbind();
+				#endif
+			#endif
 			cudaFree(d_A->elements);
 			cudaFree(d_b->elements);
 			cudaFree(d_last_x->elements);
-			cudaFree(d_sum_matrix->elements);
+			cudaFree(d_c->elements);
 			cudaFree(d_x->elements);
 			cudaFree(d_x_diff);
 
 			free(d_A);
 			free(d_b);
-			free(d_sum_matrix);
+			free(d_c);
 			free(d_last_x);
 			free(d_x);
 		}
