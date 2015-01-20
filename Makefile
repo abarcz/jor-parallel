@@ -21,8 +21,5 @@ deviceid.o: deviceid.cu deviceid.h common.h
 main.s: main.c
 	$(CC) $(CCFLAGS) -c -g -Wa,-aslh main.c > main.s
 
-test: $(OBJECTS)
-	$(NVCC) -gencode arch=compute_20,code=sm_20 -o test test.cu
-
 clean:
 	rm -f main *.o main.s
