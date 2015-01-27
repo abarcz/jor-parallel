@@ -1,0 +1,35 @@
+GPU Device 0: "Quadro 4000" with compute capability 2.0
+
+Using matrix dimension: 512
+RMSE: 0.0083742486
+iterations: 10
+seconds: 0.0019531250
+RMSE: 0.0068944460
+iterations: 10
+seconds: 0.0019531250
+RMSE: 0.0088781277
+iterations: 9
+seconds: 0.0019531250
+RMSE: 0.0068150139
+iterations: 11
+seconds: 0.0029296875
+RMSE: 0.0086557018
+iterations: 9
+seconds: 0.0019531250
+RMSE: 0.0089669451
+iterations: 10
+seconds: 0.0019531250
+RMSE: 0.0074116457
+iterations: 11
+seconds: 0.0029296875
+RMSE: 0.0081156176
+iterations: 10
+seconds: 0.0019531250
+RMSE: 0.0080750762
+iterations: 10
+seconds: 0.0019531250
+RMSE: 0.0074088485
+iterations: 10
+seconds: 0.0019531250
+Time: mean 0.0021484375 std 0.0012352646
+RMSE: mean 0.0079595670 std 0.0023666043
