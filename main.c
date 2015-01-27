@@ -2,7 +2,6 @@
 #include "amatrix.h"
 #include "deviceid.h"
 #include "common.h"
-#include "test.h"
 #include <omp.h>
 #include <stdio.h>
 #include <stdbool.h>
